@@ -294,17 +294,17 @@ def compare_comments():
                 positive=positive+1
 
 
-        print"positive comments : %s"%(positive)
-        print"negative comments : %s"%(negative)
-        labels = "Positive Comments", "Negative Comments"
-        numbers = [positive, negative]
-        colors = ['gold', 'green']
-        explode = (0.1, 0)  # explode 1st slice
-        # Plot
-        plt.pie(numbers, explode=explode, labels=labels, colors=colors,autopct='%1.1f%%', shadow=True, startangle=140)
+    print"positive comments : %s"%(positive)
+    print"negative comments : %s"%(negative)
+    labels = "Positive Comments", "Negative Comments"
+    numbers = [positive, negative]
+    colors = ['gold', 'green']
+    explode = (0.1, 0)  # explode 1st slice
+    # Plot
+    plt.pie(numbers, explode=explode, labels=labels, colors=colors,autopct='%1.1f%%', shadow=True, startangle=140)
 
-        plt.axis('equal')
-        plt.show()
+    plt.axis('equal')
+    plt.show()
 
 
 
