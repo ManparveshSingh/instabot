@@ -1,9 +1,12 @@
-import requests, urllib ,datetime
+import requests, urllib ,datetime,colorama
+import matplotlib.pyplot as plt
+from termcolor import *
 from textblob import TextBlob
 from textblob.sentiments import NaiveBayesAnalyzer
 
 APP_ACCESS_TOKEN = '1356420988.10a4b84.ddf3eb040170448cb17e6411f2664c5f'
 BASE_URL = 'https://api.instagram.com/v1/'
+colorama.init()
 
 '''
 Function declaration to get your own info
@@ -144,6 +147,21 @@ def get_post_id(insta_username):
         exit()
 
 
+#function to get post id of own recent post
+def get_own_post_id():
+    request_url = (BASE_URL + 'users/self/media/recent/?access_token=%s') % (APP_ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    own_media = requests.get(request_url).json()
+
+    if own_media['meta']['code'] == 200:
+        if len(own_media['data']):
+            return own_media['data'][0]['id']
+        else:
+            print 'Post does not exist!'
+    else:
+        print 'Status code other than 200 received!'
+
+
 
 '''
 Function declaration to like the recent post of a user
@@ -184,14 +202,14 @@ def post_a_comment(insta_username):
 Function to get the list of users who liked post
 '''
 def get_like_list(insta_username):
-    media_id = get_post_id(insta_username)
+    media_id=get_post_id(insta_username)
     request_url = (BASE_URL + 'media/%s/likes?access_token=%s') % (media_id,APP_ACCESS_TOKEN)
     print 'GET request url:%s' %(request_url)
     users_info = requests.get(request_url).json()
     i=0
     if users_info['meta']['code'] == 200:
         if len(users_info['data']):
-            for users_info['data']:
+            for ele in users_info['data']:
              print (users_info['data'][i]['username'])
              i=i+1
         else:
@@ -202,15 +220,15 @@ def get_like_list(insta_username):
 '''
 Function to get list of users who commented in post
 '''
-def get_comment_list (insta_usernmae):
-    media_id=get_post_id(insta_usernmae)
+def get_comment_list(insta_usernmae):
+    media_id = get_post_id(insta_usernmae)
     request_url = (BASE_URL + 'media/%s/comments?access_token=%s') %(media_id ,APP_ACCESS_TOKEN)
     print'GET request url :%s' %(request_url)
     comments_info= requests.get(request_url).json()
     i=0
     if comments_info['meta']['code'] == 200:
         if len(comments_info['data']):
-            for comments_info['data']:
+            for ele in comments_info['data']:
              print (comments_info['data'][i]['text'])
              print (comments_info['data'][i]['from']['username'])
              i=i+1
@@ -253,12 +271,52 @@ def delete_negative_comment(insta_username):
     else:
         print 'Status code other than 200 received!'
 
+#function to compare the comments on own recent post nd plot a pie chart of same
+def compare_comments():
+    media_id =get_own_post_id()
+    request_url =(BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, APP_ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    comment_info = requests.get(request_url).json()
+    negative = 0
+    positive = 0
+
+    if comment_info['meta']['code'] == 200 and len(comment_info['data']):
+    # Plot
+        for x in range(0, len(comment_info['data'])):
+            comment_id = comment_info['data'][x]['id']
+            comment_text = comment_info['data'][x]['text']
+            blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
+            if (blob.sentiment.p_neg > blob.sentiment.p_pos):
+                print "Negative comment : %s by %s\n" % (comment_text,comment_info["data"][x]["from"]["username"])
+                negative=negative+1
+            else:
+                print "Positive comment : %s by %s\n" % (comment_text,comment_info["data"][x]["from"]["username"])
+                positive=positive+1
+
+
+        print"positive comments : %s"%(positive)
+        print"negative comments : %s"%(negative)
+        labels = "Positive Comments", "Negative Comments"
+        numbers = [positive, negative]
+        colors = ['gold', 'green']
+        explode = (0.1, 0)  # explode 1st slice
+        # Plot
+        plt.pie(numbers, explode=explode, labels=labels, colors=colors,autopct='%1.1f%%', shadow=True, startangle=140)
+
+        plt.axis('equal')
+        plt.show()
+
+
+
+
+
+
 
 def start_bot():
     while True:
         print '\n'
-        print 'Hey! Welcome to instaBot!'
-        print 'Here are your menu options:'
+        cprint ('Hey! Welcome to instaBot!',"red")
+        cprint ('Here are your menu options:',"blue")
         print "a.Get your own details\n"
         print "b.Get details of a user by username\n"
         print "c.Get your own recent post\n"
@@ -268,7 +326,8 @@ def start_bot():
         print "g.Get a list of comments on the recent post of a user\n"
         print "h.Make a comment on the recent post of a user\n"
         print "i.Delete negative comments from the recent post of a user\n"
-        print "j.Exit"
+        print "j.compare the comments on own recent post an creat a pie chart of the same\n"
+        cprint ("k.Exit","red")
 
         choice = raw_input("Enter you choice: ")
         if choice == "a":
@@ -296,7 +355,9 @@ def start_bot():
         elif choice == "i":
             insta_username = raw_input("Enter the username of the user: ")
             delete_negative_comment(insta_username)
-        elif choice == "j":
+        elif choice =="j":
+            compare_comments()
+        elif choice == "k":
             exit()
         else:
             print "wrong choice"
